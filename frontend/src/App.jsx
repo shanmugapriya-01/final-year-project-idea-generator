@@ -446,7 +446,7 @@ const GeneratorSection = () => {
   const handleFeatureRequest = async (project, cardId, featureEndpoint) => {
     setFeatureState(prev => ({ ...prev, [cardId]: { loading: true, active: featureEndpoint, data: null, error: null } }));
     try {
-      const res = await fetch(`http://localhost:5000/${featureEndpoint}`, {
+      const res = await fetch(`https://final-year-project-idea-generator.onrender.com/${featureEndpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: project.title, description: project.description })
@@ -478,7 +478,7 @@ const GeneratorSection = () => {
     setTimeout(scrollToBottom, 100);
 
     try {
-      const res = await fetch('http://localhost:5000/generate', {
+      const res = await fetch('https://final-year-project-idea-generator.onrender.com/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain })
@@ -490,7 +490,7 @@ const GeneratorSection = () => {
         setChatHistory([...newHistory, { role: 'error', content: data.error || 'No projects returned.' }]);
       }
     } catch {
-      setChatHistory([...newHistory, { role: 'error', content: "Failed to connect to the backend server. Make sure it's running on port 5000." }]);
+      setChatHistory([...newHistory, { role: 'error', content: "Failed to connect to the backend server. Please try again later." }]);
     } finally {
       setIsLoading(false);
       setTimeout(scrollToBottom, 100);
