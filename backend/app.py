@@ -6,12 +6,18 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 
-# ── Load .env from the same directory as this script ────────────────────────
-env_path = os.path.join(os.path.dirname(__file__), '.env')
-env_loaded = load_dotenv(env_path)
-
+# ── Load API key: env var first (Render), fall back to .env locally ─────────
 GROQ_MODEL = "llama-3.3-70b-versatile"
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+
+if not GROQ_API_KEY:
+    # Fall back to .env file for local development
+    env_path = os.path.join(os.path.dirname(__file__), '.env')
+    env_loaded = load_dotenv(env_path)
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+else:
+    env_path = None
+    env_loaded = False
 
 print("========================================")
 print(f"Loading .env from: {env_path}")
@@ -21,7 +27,7 @@ if GROQ_API_KEY and GROQ_API_KEY != "your_groq_api_key_here":
     masked = f"{GROQ_API_KEY[:8]}...{GROQ_API_KEY[-4:]}" if len(GROQ_API_KEY) > 12 else "TOO_SHORT"
     print(f"Groq API Key Status : FOUND ({masked})")
 else:
-    print("Groq API Key Status : MISSING — add GROQ_API_KEY to .env")
+    print("Groq API Key Status : MISSING — add GROQ_API_KEY to .env or Render env vars")
     GROQ_API_KEY = None
 
 print(f"Groq Model          : {GROQ_MODEL}")
@@ -318,4 +324,8 @@ Return ONLY these fields."""
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False
+    )
