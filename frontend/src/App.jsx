@@ -446,18 +446,25 @@ const GeneratorSection = () => {
   const handleFeatureRequest = async (project, cardId, featureEndpoint) => {
     setFeatureState(prev => ({ ...prev, [cardId]: { loading: true, active: featureEndpoint, data: null, error: null } }));
     try {
-      const res = await fetch(`https://final-year-project-idea-generator.onrender.com/${featureEndpoint}`, {
+      const url = `https://final-year-project-idea-generator.onrender.com/${featureEndpoint}`;
+      console.log(`[API Request] POST ${url}`);
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: project.title, description: project.description })
       });
+      if (!res.ok) {
+        console.error(`[API Error] HTTP ${res.status} from ${featureEndpoint}`);
+      }
       const data = await res.json();
+      console.log(`[API Response] ${featureEndpoint}:`, data);
       if (data.success) {
         setFeatureState(prev => ({ ...prev, [cardId]: { loading: false, active: featureEndpoint, data: data.content, error: null } }));
       } else {
         setFeatureState(prev => ({ ...prev, [cardId]: { loading: false, active: featureEndpoint, data: null, error: data.error || 'Failed.' } }));
       }
-    } catch {
+    } catch (err) {
+      console.error(`[API Network Error] ${featureEndpoint}:`, err);
       setFeatureState(prev => ({ ...prev, [cardId]: { loading: false, active: featureEndpoint, data: null, error: 'Network error.' } }));
     }
   };
@@ -478,18 +485,25 @@ const GeneratorSection = () => {
     setTimeout(scrollToBottom, 100);
 
     try {
-      const res = await fetch('https://final-year-project-idea-generator.onrender.com/generate', {
+      const url = 'https://final-year-project-idea-generator.onrender.com/generate';
+      console.log(`[API Request] POST ${url}`);
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain })
       });
+      if (!res.ok) {
+        console.error(`[API Error] HTTP ${res.status} from /generate`);
+      }
       const data = await res.json();
+      console.log(`[API Response] /generate:`, data);
       if (data.success && Array.isArray(data.projects) && data.projects.length > 0) {
         setChatHistory([...newHistory, { role: 'ai', projects: data.projects }]);
       } else {
         setChatHistory([...newHistory, { role: 'error', content: data.error || 'No projects returned.' }]);
       }
-    } catch {
+    } catch (err) {
+      console.error(`[API Network Error] /generate:`, err);
       setChatHistory([...newHistory, { role: 'error', content: "Failed to connect to the backend server. Please try again later." }]);
     } finally {
       setIsLoading(false);
