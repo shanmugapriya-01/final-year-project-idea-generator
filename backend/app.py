@@ -90,19 +90,17 @@ def call_groq_api(system_prompt, user_prompt):
 # ── Helper: extract projects list from raw AI response ────────────────────────
 def extract_projects(raw):
     """Try multiple strategies to parse the JSON from the AI response."""
-    # Strip markdown code fences if present
-    cleaned = re.sub(r'^```(?:json)?\s*', '', raw.strip(), flags=re.IGNORECASE)
-    cleaned = re.sub(r'\s*```$', '', cleaned.strip())
-
-    # Strategy 1: parse cleaned text directly
-    try:
-        parsed = json.loads(cleaned)
-        projects = parsed.get("projects", [])
-        if projects:
-            print(f"[INFO] Strategy 1 (direct parse) — found {len(projects)} projects")
-            return projects
-    except Exception:
-        pass
+    # Strategy 1: Look for markdown json block
+    match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', raw, re.DOTALL | re.IGNORECASE)
+    if match:
+        try:
+            parsed = json.loads(match.group(1).strip())
+            projects = parsed.get("projects", [])
+            if projects:
+                print(f"[INFO] Strategy 1 (markdown extract) — found {len(projects)} projects")
+                return projects
+        except Exception as e:
+            print(f"[WARN] Strategy 1 failed: {e}")
 
     # Strategy 2: regex-extract first {...} block from raw response
     match = re.search(r'\{[\s\S]*\}', raw)
@@ -115,6 +113,16 @@ def extract_projects(raw):
                 return projects
         except Exception as e2:
             print(f"[WARN] Strategy 2 failed: {e2}")
+
+    # Strategy 3: direct parse just in case
+    try:
+        parsed = json.loads(raw.strip())
+        projects = parsed.get("projects", [])
+        if projects:
+            print(f"[INFO] Strategy 3 (direct parse) — found {len(projects)} projects")
+            return projects
+    except Exception:
+        pass
 
     return []
 
@@ -142,6 +150,7 @@ def generate_ideas():
             ],
             temperature=0.7,
             max_tokens=4096,
+            response_format={"type": "json_object"},
         )
 
         raw = chat_completion.choices[0].message.content
